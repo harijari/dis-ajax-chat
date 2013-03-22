@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * @file ajax_chat_rules.module
+ * TODO: Enter file description here.
+ */
+
+
+/**
+ * Implements hook_help().
+ */
+function ajax_chat_rules_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#ajax_chat_rules':
+      return t("TODO: Create admin help text.");
+    // OPTIONAL: Add additional cases for other paths that should display help text.
+  }
+}
+

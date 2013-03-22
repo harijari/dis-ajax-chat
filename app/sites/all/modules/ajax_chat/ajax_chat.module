@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * @file ajax_chat.module
+ * TODO: Enter file description here.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function ajax_chat_menu() { 
+  // This is the minimum information you can provide for a menu item.
+  $items['ajax_chat/ajax/add'] = array(
+    'title' => 'TODO: Enter menu item title',
+    'page callback' => 'TODO: Enter callback function',
+    'access arguments' => array('TODO: Enter user permissions'),
+  );
+
+  $items['ajax_chat/ajax/update/%chat_entry'] = array(
+    'title' => 'TODO: Enter menu item title',
+    'page callback' => 'TODO: Enter callback function',
+    'access arguments' => array('TODO: Enter user permissions'),
+  );
+
+  $items['ajax_chat/ajax/delete/%chat_entry'] = array(
+    'title' => 'TODO: Enter menu item title',
+    'page callback' => 'TODO: Enter callback function',
+    'access arguments' => array('TODO: Enter user permissions'),
+  );
+
+  $items['ajax_chat/ajax/list'] = array(
+    'title' => 'TODO: Enter menu item title',
+    'page callback' => 'TODO: Enter callback function',
+    'access arguments' => array('TODO: Enter user permissions'),
+  );
+  return $items;
+}
+
+
+/**
+ * Implements hook_permission().
+ */
+function ajax_chat_permission() {
+  return array(
+    'administer chat' => array(
+      'title' => t('Permission to edit and delete other users chat entries'),
+    ),
+    'add chat entry' => array(
+      'title' => t('Possibility to add chat entries.'),
+    ),
+    'update own chat entry' => array(
+      'title' => t('Possiblity to moderate own chat entries.'),
+    ),
+    'delete own chat entry' => array(
+      'title' => t('Possibility to remove own chat entries.'),
+    ),
+    'view chat entries' => array(
+      'title' => t('Possibility to access chat entries list.'),
+    ),
+  );
+}

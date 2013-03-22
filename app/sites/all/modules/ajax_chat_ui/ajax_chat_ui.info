@@ -1,0 +1,5 @@
+name = UI for ajax_chat
+description = ajax_chat user and admin interface.
+dependencies[] = ajax_chat
+package = ajax_chat
+core = 7.x

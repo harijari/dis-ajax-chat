@@ -1,0 +1,53 @@
+<?php
+/**
+ * @file 
+ */
+
+
+
+
+/**
+ * Implements hook_schema().
+ */
+function ajax_chat_schema() {
+  return array(
+    'chat_entry' => array(
+      'description' => 'The base table for chat entries.',
+      'fields' => array(
+        'chid' => array(
+          'description' => 'The primary identifier for a chat entry.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'timestamp' => array(
+          'description' => 'The unix timestamp for a chat entry creation date.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'body' => array(
+          'description' => 'The full chat entry body',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+        ),
+        'uid' => array(
+          'description' => 'The chat entry author',
+          'type' => 'int',
+          'not null' => TRUE,
+        ),
+      ),
+      'indexes' => array(
+        'chat_timestamp' => array('timestamp'),
+      ),
+      'primary key' => array('chid'),
+      'foreign keys' => array(
+        'chat_author_uid' => array(
+          'table' => 'users',
+          'columns' => array('uid' => 'uid'),
+        ),
+      ),
+    ),
+  );
+}

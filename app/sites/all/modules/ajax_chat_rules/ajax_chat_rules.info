@@ -1,0 +1,4 @@
+name = Rules module integration for ajax_chat_rules module.
+description = Rules module integration for ajax_chat_rules module.
+package = ajax_chat
+core = 7.x

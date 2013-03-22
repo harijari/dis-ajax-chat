@@ -1,0 +1,4 @@
+name = Ajax chat
+description = DiNS tutorial project: Simple ajax based chat.
+package = ajax_chat
+core = 7.x
