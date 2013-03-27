@@ -1,40 +1,115 @@
 <?php
 
 /**
- * @file ajax_chat.module
- * TODO: Enter file description here.
+ * @file
+ * Major implementation of ajax_chat module.
+ * This file includes implementation of all
+ * hooks and public API
  */
 
 
 /**
  * Implements hook_menu().
+ *
+ * This implementation registers two
+ * paths in system.
+ *
+ * - Ajax chat page.
+ * - Ajax chat ajax callback.
  */
-function ajax_chat_menu() { 
-  // This is the minimum information you can provide for a menu item.
-  $items['ajax_chat/ajax/add'] = array(
-    'title' => 'TODO: Enter menu item title',
-    'page callback' => 'TODO: Enter callback function',
-    'access arguments' => array('TODO: Enter user permissions'),
-  );
+function ajax_chat_menu() {
 
-  $items['ajax_chat/ajax/update/%chat_entry'] = array(
-    'title' => 'TODO: Enter menu item title',
-    'page callback' => 'TODO: Enter callback function',
-    'access arguments' => array('TODO: Enter user permissions'),
-  );
-
-  $items['ajax_chat/ajax/delete/%chat_entry'] = array(
-    'title' => 'TODO: Enter menu item title',
-    'page callback' => 'TODO: Enter callback function',
-    'access arguments' => array('TODO: Enter user permissions'),
-  );
-
+  // Ajax callback. It returns html fragment for use in ajax_chat.
   $items['ajax_chat/ajax/list'] = array(
-    'title' => 'TODO: Enter menu item title',
-    'page callback' => 'TODO: Enter callback function',
-    'access arguments' => array('TODO: Enter user permissions'),
+    'page callback' => 'ajax_chat_list_callback',
+    'type' => MENU_CALLBACK,
+    'file' => 'ajax_chat.ajax.inc',
+    'access arguments' => array('view chat entries'),
   );
+
+  // Callback for overall accessible ajax_chat.
+  $items['ajax_chat'] = array(
+    'title' => 'Brand new Ajax Chat',
+    'page callback' => 'ajax_chat_page',
+    'file' => 'ajax_chat.pages.inc',
+    'access arguments' => array('view chat entries'),
+  );
+
   return $items;
+}
+
+
+/**
+ * Implements hook_theme().
+ *
+ * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+ */
+function ajax_chat_theme($existing, $type, $theme, $path) {
+  return array(
+    'chat_entries_list' => array(
+      'template' => 'templates/chat_entries_list',
+    ),
+    'ajax_chat_page' => array(
+      'template' => 'templates/ajax_chat_page',
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_preprocess().
+ *
+ * This preprocess adds variables to chat_entries_list theme.
+ */
+function ajax_chat_preprocess_chat_entries_list(&$vars) {
+  // Retrieve entries from database and pass it to template.
+  $vars['elements'] = ajax_chat_entries_retrieve(array(), 20);
+
+  return $vars;
+}
+
+/**
+ * Implements hook_preprocess().
+ *
+ * This implementation add variables for ajax_chat_page.tpl.php
+ */
+function ajax_chat_preprocess_ajax_chat_page(&$vars) {
+  module_load_include('inc', 'ajax_chat_ui', 'ajax_chat_ui.pages');
+
+  // If ajax_chat_ui module is enabled, render chat entry form.
+  if (function_exists('ajax_chat_ui_message_form')) {
+    $vars['form'] = drupal_get_form('ajax_chat_ui_message_form');
+  }
+
+  // Renders list of chat entries.
+  $vars['chat_entries_list'] = theme('chat_entries_list');
+
+  // Add javascript settings.
+  // This statement adds additioanl settings (from Drupal.settings)
+  // available at javascript side.
+  drupal_add_js(
+    array(
+      'ajax_chat_entries_list_url' => url(
+        'ajax_chat/ajax/list',
+        array('absolute' => TRUE)
+      ),
+    ),
+    array(
+      'type' => 'setting',
+    )
+  );
+
+  // Add javascript logic on ajax_chat page.
+  drupal_add_js(
+    drupal_get_path('module', 'ajax_chat') . '/js/ajax_chat.js'
+  );
+
+  // Add styles on ajax_chat page.
+  drupal_add_css(
+    drupal_get_path('module', 'ajax_chat') . '/css/ajax_chat.css'
+  );
+
+  return $vars;
 }
 
 
@@ -49,14 +124,84 @@ function ajax_chat_permission() {
     'add chat entry' => array(
       'title' => t('Possibility to add chat entries.'),
     ),
-    'update own chat entry' => array(
-      'title' => t('Possiblity to moderate own chat entries.'),
-    ),
-    'delete own chat entry' => array(
-      'title' => t('Possibility to remove own chat entries.'),
-    ),
     'view chat entries' => array(
       'title' => t('Possibility to access chat entries list.'),
     ),
   );
+}
+
+
+/**
+ * Save list of chat entries to database.
+ *
+ * @param array $values
+ *   List of chat entries. We save all those values to database.
+ *   If value has chid value, we perform update instead of insert.
+ *
+ * @return array
+ *   List of values after insertion or update in database. Basicaly, this
+ *   structure should be simmilar to param $values, but every row should
+ *   have chid key propagated.
+ */
+function ajax_chat_entries_save($values) {
+  foreach ($values as &$value) {
+    if (isset($value['chid'])) {
+      drupal_write_record('chat_entry', $value, array('chid'));
+    }
+    else {
+      drupal_write_record('chat_entry', $value);
+    }
+  }
+
+  return $values;
+}
+
+
+/**
+ * Remove list of chat entries from database.
+ *
+ * @param array $chids
+ *   This is array of integer chid values. Every value with such chid value
+ *   will be removed from database.
+ */
+function ajax_chat_entries_remove($chids) {
+  db_delete('chat_entry')->condition('chid', $chids, 'IN')->execute();
+}
+
+
+/**
+ * Retrieve newest chat entries from database.
+ *
+ * This function retrieves list of entries. We sort values by creation date,
+ * in desceding order.
+ *
+ * @param array $chids
+ *   List of chid values. We can filter values from database, by
+ *   setting here list of interesting chid values.
+ *
+ * @param int $limit
+ *   Amount of elements from database.
+ *
+ * @return array
+ *   All entries retrieved from database. Each row is a associative array,
+ *   with database field names as keys.
+ */
+function ajax_chat_entries_retrieve($chids = array(), $limit = 0) {
+  $query = db_select('chat_entry', 'ce');
+
+  $query->innerJoin('users', 'u', 'u.uid = ce.uid');
+  $query->fields('ce')
+    ->fields('u', array('name', 'mail'))
+    ->orderBy('ce.chid', 'DESC');
+
+  if (count($chids) > 0) {
+    $query->condition('chid', $chids, 'IN');
+  }
+
+  if ($limit > 0) {
+    $query->range(0, $limit);
+  }
+
+  return $query->execute()->fetchAll(PDO::FETCH_ASSOC);
+
 }

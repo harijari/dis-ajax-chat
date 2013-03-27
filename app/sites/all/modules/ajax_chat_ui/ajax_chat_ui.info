@@ -3,3 +3,5 @@ description = ajax_chat user and admin interface.
 dependencies[] = ajax_chat
 package = ajax_chat
 core = 7.x
+
+files[] = ajax_chat_ui.pages.inc

@@ -1,45 +1,73 @@
 <?php
 
 /**
- * @file ajax_chat_ui.module
- * TODO: Enter file description here.
+ * @file
+ * This function includes implementation of hooks related to user interface
+ * of ajax-ified chat functionality.
  */
 
 
 /**
  * Implements hook_menu().
+ *
+ * This implementation registers two different pages:
+ * - Single form add / edit form.
+ * - Administration panel for ajax chat.
  */
-function ajax_chat_ui_menu() { 
+function ajax_chat_ui_menu() {
   // This is the minimum information you can provide for a menu item.
-  $items['ajax_chat_ui'] = array(
-    'title' => 'TODO: Enter menu item title',
-    'page callback' => 'TODO: Enter callback function',
-    'access arguments' => array('TODO: Enter user permissions'),
+  $items['ajax_chat_ui/chat_entry_form'] = array(
+    'title' => 'Chat entry form',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ajax_chat_ui_chat_entry_form'),
+    'access arguments' => array('add chat entry'),
+    'file' => 'ajax_chat_ui.pages.inc',
   );
   // This is a menu item for a form.
   $items['ajax_chat_ui/admin'] = array(
-    'title' => 'TODO: Enter menu item title',
+    'title' => 'Ajax chat administration panel',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('ajax_chat_ui_form'),
-    'access arguments' => array('TODO: Enter user permissions'),
+    'page arguments' => array('ajax_chat_ui_admin_form'),
+    'access arguments' => array('administer chat'),
+    'file' => 'ajax_chat_ui.pages.inc',
   );
-  // More complex menu item.
-  $items['ajax_chat_ui/foo'] = array(
-    'title' => 'TODO: Enter menu item title',
-    'description' => 'TODO: Enter description',
-    'page callback' => 'TODO: Enter callback function',
-    'page arguments' => array(), // An array of arguments to pass to the page callback function. Integer values pass the corresponding URL component.
-    'access callback' => '', // defaults to user_access()
-    'access arguments' => array('TODO: Enter user permissions'),
-    'weight' => 0,
-    'type' => MENU_NORMAL_ITEM, // One of MENU_NORMAL_ITEM / MENU_CALLBACK / MENU_SUGGESTED_ITEM / MENU_LOCAL_TASK / MENU_DEFAULT_LOCAL_TASK
-    'file' => 'ajax_chat_ui.admin.inc',
-    'menu_name' => '', // Menu to place this item in.
-    'title callback' => '', // Function to generate the title, defaults to t(). 
-    'title arguments' => array(), // Arguments to send to t() or your custom callback. 
-  );
-  // OPTIONAL: Fill in additional menu items
 
   return $items;
 }
 
+
+/**
+ * Implementation of ajax callback for chat entry form.
+ *
+ * According to documentation
+ * http://api.drupal.org/api/drupal/includes!ajax.inc/group/ajax/7,
+ * such function can create one of few possible values:
+ * - String value (just to render as plain HTML)
+ * - Render API array
+ * - Or (and this is current case) array with list of
+ * ajax commands. You can see ajax commands documentation here:
+ * http://api.drupal.org/api/drupal/includes!ajax.inc/group/ajax_commands/7
+ *
+ * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+ */
+function ajax_chat_ajax_update_callback($form, $form_state) {
+  $commands = array();
+
+  // Save message submitted by form. We use public API from ajax_chat module.
+  ajax_chat_entries_save(array($form_state['values']));
+
+  // This command will call jQuery.html() method on chat list wrapper.
+  // This div will be propagated with rendered list of chat entries.
+  $commands[] = ajax_command_html(
+    '.ajax-chat-wrapper',
+    theme('chat_entries_list')
+  );
+
+  // Return array structure. This array will say ajax framework, that
+  // this output is list of commands.
+  return array(
+    '#type' => 'ajax',
+    '#commands' => $commands,
+  );
+
+}

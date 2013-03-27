@@ -1,0 +1,21 @@
+ul.chat-entries {
+}
+
+ul.chat-entries li .name {
+  font-weight: bolder;
+  
+}
+
+ul.chat-entries li .name:after {
+  content: "\00BB";
+}
+
+
+ul.chat-entries li .message {
+  font-style: italic;
+}
+
+ul.chat-entries li {
+}
+
+
